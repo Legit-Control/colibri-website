@@ -8,6 +8,10 @@ on:
 
 jobs:
   push-to-remote:
+    # Skip this workflow if running in the second remote repository
+    # This prevents the workflow from running when it gets pushed to the second remote
+    if: github.repository != 'NilsJacobsen/colibri-website-second-remote'
+    
     runs-on: ubuntu-latest
     permissions:
       contents: write
