@@ -28,26 +28,57 @@ jobs:
           GIT_PAT: "${{ secrets.GIT_PAT }}"
           SECOND_REMOTE_URL: "${{ secrets.SECOND_REMOTE_URL }}"
         run: |
+          set -e  # Exit on error
+          
           # Extract repo path from URL (handles both https:// and git@ formats)
-          if [[ "$SECOND_REMOTE_URL" =~ github\.com[:/]([^/]+/[^/]+) ]]; then
+          REPO_PATH=""
+          
+          # Handle https://github.com/username/repo.git format
+          if [[ "$SECOND_REMOTE_URL" =~ ^https://github\.com/([^/]+/[^/]+) ]]; then
             REPO_PATH="${BASH_REMATCH[1]}"
-            # Remove .git suffix if present
-            REPO_PATH="${REPO_PATH%.git}"
-            
-            # Construct authenticated URL
-            AUTH_URL="https://${GIT_PAT}@github.com/${REPO_PATH}.git"
-            
-            # Add or update remote
-            if git remote | grep -q "^second-remote$"; then
-              git remote set-url second-remote "$AUTH_URL"
-            else
-              git remote add second-remote "$AUTH_URL"
-            fi
-            
-            # Push to second remote
-            echo "Pushing to second remote: ${REPO_PATH}"
-            git push second-remote main || git push second-remote main --force
-          else
+          # Handle git@github.com:username/repo.git format
+          elif [[ "$SECOND_REMOTE_URL" =~ ^git@github\.com:([^/]+/[^/]+) ]]; then
+            REPO_PATH="${BASH_REMATCH[1]}"
+          # Handle github.com/username/repo.git format (without protocol)
+          elif [[ "$SECOND_REMOTE_URL" =~ github\.com[:/]([^/]+/[^/]+) ]]; then
+            REPO_PATH="${BASH_REMATCH[1]}"
+          fi
+          
+          # Remove .git suffix if present
+          REPO_PATH="${REPO_PATH%.git}"
+          
+          if [ -z "$REPO_PATH" ]; then
             echo "Error: Could not parse SECOND_REMOTE_URL"
+            echo "Please ensure SECOND_REMOTE_URL is in format: https://github.com/username/repo"
             exit 1
           fi
+          
+          # Validate REPO_PATH format (should be username/repo)
+          if [[ ! "$REPO_PATH" =~ ^[^/]+/[^/]+$ ]]; then
+            echo "Error: Invalid repository path format: ${REPO_PATH}"
+            echo "Expected format: username/repository"
+            exit 1
+          fi
+          
+          echo "Repository path: ${REPO_PATH}"
+          
+          # Construct authenticated URL
+          # Format: https://TOKEN@github.com/owner/repo.git
+          AUTH_URL="https://${GIT_PAT}@github.com/${REPO_PATH}.git"
+          
+          # Add or update remote
+          if git remote | grep -q "^second-remote$"; then
+            echo "Updating existing second-remote"
+            git remote set-url second-remote "$AUTH_URL"
+          else
+            echo "Adding new second-remote"
+            git remote add second-remote "$AUTH_URL"
+          fi
+          
+          # Verify remote configuration (mask PAT in output)
+          echo "Remote configuration:"
+          git remote get-url second-remote | sed 's/:[^@]*@/:***@/g'
+          
+          # Push to second remote
+          echo "Pushing to second remote: ${REPO_PATH}"
+          git push second-remote main
