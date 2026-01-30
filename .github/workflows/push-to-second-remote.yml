@@ -108,52 +108,30 @@ jobs:
             echo "PAT validation successful"
           fi
           
-          # Construct authenticated URL with PAT embedded
-          # For GitHub, we can use the PAT directly as the username
-          # Format: https://TOKEN@github.com/owner/repo.git
-          AUTH_URL="https://${GIT_PAT}@github.com/${REPO_PATH}.git"
+          # Use clean URL without embedded credentials
+          BASE_URL="https://github.com/${REPO_PATH}.git"
           
-          # Verify the URL components are correct
-          echo "Repository path: ${REPO_PATH}"
-          echo "URL structure: https://***@github.com/${REPO_PATH}.git"
-          
-          # Add or update remote with authenticated URL
+          # Add or update remote (without auth in URL)
           if git remote | grep -q "^second-remote$"; then
             echo "Updating existing second-remote"
-            git remote set-url second-remote "$AUTH_URL"
+            git remote set-url second-remote "$BASE_URL"
           else
             echo "Adding new second-remote"
-            git remote add second-remote "$AUTH_URL"
+            git remote add second-remote "$BASE_URL"
           fi
           
-          # Verify the remote was set correctly by checking the path
-          VERIFY_URL=$(git remote get-url second-remote)
-          echo "Verifying remote URL..."
+          # Use credential store with proper format
+          # This is the most reliable method for GitHub PATs
+          git config --global credential.helper store
+          echo "https://x-access-token:${GIT_PAT}@github.com" > ~/.git-credentials
+          chmod 600 ~/.git-credentials
           
-          # Test if we can parse the URL back
-          if echo "$VERIFY_URL" | grep -q "github.com"; then
-            EXTRACTED_PATH=$(echo "$VERIFY_URL" | sed -E 's|https://[^@]+@github.com/([^/]+/[^/]+)\.git|\1|')
-            if [ "$EXTRACTED_PATH" = "$REPO_PATH" ]; then
-              echo "✓ Remote URL verified - path matches: ${REPO_PATH}"
-            else
-              echo "✗ Path mismatch!"
-              echo "  Expected: ${REPO_PATH}"
-              echo "  Got: ${EXTRACTED_PATH}"
-              echo "  Full URL (masked): $(echo "$VERIFY_URL" | sed 's/:[^@]*@/:***@/g')"
-            fi
-          else
-            echo "✗ Remote URL doesn't contain github.com"
-            echo "  URL (masked): $(echo "$VERIFY_URL" | sed 's/:[^@]*@/:***@/g')"
-          fi
+          # Also set credential helper specifically for github.com
+          git config --global credential.https://github.com.helper store
           
-          # Also test the URL format with curl to see if it's accessible
-          echo "Testing URL accessibility..."
-          TEST_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -u "${GIT_PAT}:x-oauth-basic" "https://api.github.com/repos/${REPO_PATH}")
-          if [ "$TEST_RESPONSE" = "200" ]; then
-            echo "✓ URL format is correct and accessible"
-          else
-            echo "✗ URL test returned: ${TEST_RESPONSE}"
-          fi
+          echo "Repository path: ${REPO_PATH}"
+          echo "Remote URL: ${BASE_URL}"
+          echo "Credential helper configured"
           
           # Test repository access via API first
           echo "Testing repository access via API..."
@@ -216,10 +194,40 @@ jobs:
           if [ "$IS_EMPTY" = "true" ]; then
             # For empty repos, use -u flag to set upstream and create the branch
             echo "Pushing to empty repository with upstream flag..."
-            git push -u second-remote main || {
-              echo "Initial push failed, trying with force..."
-              git push -u second-remote main --force
-            }
+            set +e
+            PUSH_OUTPUT=$(git push -u second-remote main 2>&1)
+            PUSH_EXIT=$?
+            set -e
+            
+            if [ $PUSH_EXIT -ne 0 ]; then
+              echo "Push output:"
+              echo "$PUSH_OUTPUT"
+              echo ""
+              echo "=========================================="
+              echo "Failed to push to empty repository"
+              echo "=========================================="
+              echo ""
+              echo "This can happen with empty repositories. Try one of these solutions:"
+              echo ""
+              echo "Option 1 (Recommended): Manually initialize the repository"
+              echo "  1. Clone your second remote repository locally"
+              echo "  2. Copy the contents from this repo"
+              echo "  3. Commit and push to create the initial branch"
+              echo "  4. Then this workflow will work for future pushes"
+              echo ""
+              echo "Option 2: Try pushing with explicit refspec"
+              echo "  The workflow will attempt this now..."
+              echo ""
+              
+              # Try with explicit refspec
+              git push -u second-remote HEAD:main || {
+                echo "Explicit refspec also failed."
+                echo ""
+                echo "Please manually initialize the repository, then this workflow"
+                echo "will work for all subsequent pushes."
+                exit 1
+              }
+            fi
             echo "Push successful! Branch 'main' created on remote."
           else
             # For non-empty repos, try normal push first
