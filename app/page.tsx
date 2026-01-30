@@ -2,6 +2,7 @@ import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import AppScreen from "@/components/sections/AppScreen";
 import Features from "@/components/sections/Features";
+import GetStarted from "@/components/sections/GetStarted";
 import Hero from "@/components/sections/Hero";
 import Pricing from "@/components/sections/Pricing";
 
@@ -20,6 +21,9 @@ export default function Home() {
         </div>
         <div className="container" id="pricing">
           <Pricing />
+        </div>
+        <div className="container" id="get-started">
+          <GetStarted />
         </div>
       </main>
 

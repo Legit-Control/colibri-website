@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { ArrowRightIcon } from "@heroicons/react/24/outline";
+import CTA from "../CTA";
 
 const data = {
   title: "Edit Markdown together. Without leaving GitHub.",
@@ -16,19 +15,10 @@ const Hero = () => {
   return (
     <div className="w-full lg:grid grid-cols-12 gap-4 mt-16 lg:mt-44">
       <h1 className="col-span-10 col-start-2 text-4xl lg:text-6xl font-bold lg:text-center leading-tight">{data.title}</h1>
-      <h2 className="col-span-8 col-start-3 pt-4 px-0 lg:px-12 text-lg lg:text-md font-regular lg:text-center leading-relaxed text-muted-foreground">{data.subheading}</h2>
-      <Link href="/launch" className="col-span-6 col-start-4 flex items-center gap-2 justify-between bg-white rounded-full border border-border py-1 pr-1 pl-5 cursor-text hover:border-primary transition-all h-[54px] mt-16 lg:mt-4">
-        <p className="hidden lg:block font-mono">
-          <span className="text-muted-foreground/50">https://</span>
-          <span className="text-primary/60">github.com/org/repo/document.md</span>
-        </p>
-        <p className="font-mono lg:hidden">
-          <span className="text-primary/60">Enter your markdown link ...</span>
-        </p>
-        <div className="pointer-events-none bg-border rounded-full p-3 w-fit">
-          <ArrowRightIcon className="size-5" />
-        </div>
-      </Link>
+      <h2 className="mb-16 lg:mb-4 col-span-8 col-start-3 pt-4 px-0 lg:px-12 text-lg lg:text-md font-regular lg:text-center leading-relaxed text-muted-foreground">{data.subheading}</h2>
+      <div className="col-span-6 col-start-4">
+        <CTA />
+      </div>
     </div>
   );
 };

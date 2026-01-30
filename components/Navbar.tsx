@@ -88,7 +88,9 @@ const Navbar = () => {
         ))}
       </div>
       <div>
-        <Button size="sm">Get Started</Button>
+        <Link href="#get-started" onClick={(e) => handleNavClick(e, "#get-started")}>
+          <Button size="sm">Get Started</Button>
+        </Link>
       </div>
     </div>
   );
