@@ -112,21 +112,29 @@ jobs:
             echo "PAT validation successful"
           fi
           
-          # Construct authenticated URL with PAT embedded directly
-          # This is more reliable than credential helper for GitHub Actions
-          AUTH_URL="https://${GIT_PAT}@github.com/${REPO_PATH}.git"
+          # Clear any existing credential helpers that might interfere
+          # This prevents Git from using github-actions[bot] credentials
+          git config --global --unset credential.helper || true
+          git config --global --unset-all credential.helper || true
           
-          # Add or update remote with authenticated URL
+          # Use credential helper to store PAT
+          # This ensures Git uses the PAT instead of github-actions[bot]
+          git config --global credential.helper store
+          echo "https://${GIT_PAT}@github.com" > ~/.git-credentials
+          chmod 600 ~/.git-credentials
+          
+          # Add remote WITHOUT embedding PAT in URL (credential helper will provide it)
+          REMOTE_URL="https://github.com/${REPO_PATH}.git"
           if git remote | grep -q "^second-remote$"; then
             echo "Updating existing second-remote"
-            git remote set-url second-remote "$AUTH_URL"
+            git remote set-url second-remote "$REMOTE_URL"
           else
             echo "Adding new second-remote"
-            git remote add second-remote "$AUTH_URL"
+            git remote add second-remote "$REMOTE_URL"
           fi
           
           echo "Repository path: ${REPO_PATH}"
-          echo "Remote URL configured (with authentication)"
+          echo "Remote URL configured (credential helper will provide authentication)"
           
           # Test repository access via API first
           echo "Testing repository access via API..."
