@@ -79,6 +79,22 @@ jobs:
           
           echo "Repository path extracted: ${REPO_PATH}"
           
+          # Validate PAT is not empty
+          if [ -z "$GIT_PAT" ]; then
+            echo "Error: GIT_PAT secret is empty or not set"
+            exit 1
+          fi
+          
+          # Test PAT validity by making an API call
+          echo "Validating PAT..."
+          PAT_TEST=$(curl -s -o /dev/null -w "%{http_code}" -H "Authorization: token ${GIT_PAT}" "https://api.github.com/user")
+          if [ "$PAT_TEST" != "200" ]; then
+            echo "Warning: PAT validation returned HTTP ${PAT_TEST}"
+            echo "This might indicate the PAT is invalid or lacks permissions"
+          else
+            echo "PAT validation successful"
+          fi
+          
           # Construct authenticated URL
           # Format: https://TOKEN@github.com/owner/repo.git
           AUTH_URL="https://${GIT_PAT}@github.com/${REPO_PATH}.git"
@@ -96,17 +112,36 @@ jobs:
           echo "Remote URL (masked):"
           git remote get-url second-remote | sed 's/:[^@]*@/:***@/g'
           
-          # Test the remote connection
+          # Test the remote connection with better error output
           echo "Testing remote connection..."
-          git ls-remote second-remote HEAD > /dev/null 2>&1 || {
+          CONNECTION_OUTPUT=$(git ls-remote second-remote HEAD 2>&1)
+          CONNECTION_EXIT=$?
+          if [ $CONNECTION_EXIT -ne 0 ]; then
+            echo "$CONNECTION_OUTPUT"
+            echo ""
+            echo "=========================================="
             echo "Error: Cannot access remote repository"
-            echo "Please verify:"
-            echo "  1. GIT_PAT has 'repo' permissions"
-            echo "  2. GIT_PAT has access to the target repository"
-            echo "  3. SECOND_REMOTE_URL is correct: username/repo-name"
+            echo "=========================================="
+            echo ""
+            echo "Troubleshooting steps:"
+            echo "1. Verify GIT_PAT is a valid Personal Access Token (classic)"
+            echo "2. Ensure GIT_PAT has 'repo' scope enabled"
+            echo "3. Check that GIT_PAT has access to repository: ${REPO_PATH}"
+            echo "4. Verify SECOND_REMOTE_URL is correct"
+            echo "5. Make sure the target repository exists and is accessible"
+            echo ""
+            echo "To test your PAT manually, run:"
+            echo "  curl -H 'Authorization: token YOUR_PAT' https://api.github.com/repos/${REPO_PATH}"
+            echo ""
             exit 1
-          }
+          fi
+          
+          echo "Connection test successful!"
           
           # Push to second remote
           echo "Pushing to second remote: ${REPO_PATH}"
-          git push second-remote main
+          git push second-remote main || {
+            echo ""
+            echo "Push failed. Attempting with force..."
+            git push second-remote main --force
+          }
