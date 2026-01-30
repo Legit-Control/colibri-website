@@ -79,10 +79,23 @@ jobs:
           
           echo "Repository path extracted: ${REPO_PATH}"
           
+          # Validate REPO_PATH is correct format
+          if [[ ! "$REPO_PATH" =~ ^[^/]+/[^/]+$ ]]; then
+            echo "Error: Invalid repository path format: '${REPO_PATH}'"
+            echo "Expected format: username/repository"
+            echo "Please check your SECOND_REMOTE_URL secret"
+            exit 1
+          fi
+          
           # Validate PAT is not empty
           if [ -z "$GIT_PAT" ]; then
             echo "Error: GIT_PAT secret is empty or not set"
             exit 1
+          fi
+          
+          # Verify PAT doesn't contain characters that would break URL
+          if echo "$GIT_PAT" | grep -qE '[[:space:]]|"|'"'"'|`'; then
+            echo "Warning: PAT may contain characters that could break URL"
           fi
           
           # Test PAT validity by making an API call
@@ -95,8 +108,7 @@ jobs:
             echo "PAT validation successful"
           fi
           
-          # Use git credential helper instead of embedding PAT in URL
-          # This is more reliable for private repos and handles special characters
+          # Use a clean URL without auth embedded
           BASE_URL="https://github.com/${REPO_PATH}.git"
           
           # Add or update remote (without auth in URL)
@@ -108,16 +120,24 @@ jobs:
             git remote add second-remote "$BASE_URL"
           fi
           
-          # Configure git to use PAT via credential helper
-          # This method is more reliable than embedding in URL and handles special characters
+          # Use git credential store with proper format for GitHub PATs
           git config --global credential.helper store
-          # For GitHub PATs, use the PAT as the password (username can be anything)
+          # Format: https://x-access-token:TOKEN@github.com
           echo "https://x-access-token:${GIT_PAT}@github.com" > ~/.git-credentials
           chmod 600 ~/.git-credentials
           
-          # Verify remote configuration
-          echo "Remote URL:"
-          git remote get-url second-remote
+          # Verify the credentials file was created
+          if [ -f ~/.git-credentials ]; then
+            echo "Credential helper configured successfully"
+            # Verify it contains the right format (without exposing PAT)
+            if grep -q "x-access-token" ~/.git-credentials; then
+              echo "Credentials file format verified"
+            fi
+          else
+            echo "Warning: Credentials file was not created"
+          fi
+          
+          echo "Remote URL: ${BASE_URL}"
           
           # Test repository access via API first
           echo "Testing repository access via API..."
