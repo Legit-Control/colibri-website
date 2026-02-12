@@ -1,20 +1,40 @@
-import Link from "next/link";
+"use client";
+
 import { ArrowRightIcon } from "@heroicons/react/24/outline";
+import posthog from "posthog-js";
+import { Input } from "./ui/input";
+import { useState } from "react";
 
 const CTA = () => {
+  const [value, setValue] = useState("");
+
+  const handleClick = () => {
+    posthog.capture("cta_clicked", {
+      location: "main_cta",
+      repository: value,
+    });
+
+    const url = `https://app.get-colibri.com/?room_id=${value.replace("https://", "")}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
-    <Link href="/launch" className="w-full max-w-[550px] mx-auto flex items-center gap-2 justify-between bg-white rounded-full border border-border py-1 pr-1 pl-5 cursor-text hover:border-primary transition-all h-[54px]">
-      <p className="hidden lg:block font-mono">
-        <span className="text-muted-foreground/50">https://</span>
-        <span className="text-primary/60">github.com/org/repo/document.md</span>
-      </p>
-      <p className="font-mono lg:hidden">
-        <span className="text-primary/60">Enter your markdown link ...</span>
-      </p>
-      <div className="pointer-events-none bg-border rounded-full p-3 w-fit">
+    <div className="relative w-full max-w-[550px] mx-auto h-[54px]">
+      <Input
+        value={value}
+        className="ring-0 w-full h-full bg-white rounded-full border border-border py-1 pr-1 pl-5 cursor-text hover:border-primary transition-all placeholder:text-muted-foreground text-black tracking-wide placeholder:text-[16px] text-[16px]! placeholder:tracking-wide"
+        placeholder="https://github.com/org/repo/document.md"
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => setValue(event.target.value)}
+        onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+          if (event.key === "Enter") {
+            handleClick();
+          }
+        }}
+      />
+      <div onClick={handleClick} className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-border rounded-full p-3 w-fit cursor-pointer hover:bg-primary hover:text-white transition-all">
         <ArrowRightIcon className="size-5" />
       </div>
-    </Link>
+    </div>
   );
 };
 

@@ -1,4 +1,7 @@
+"use client";
+
 import { Button, ButtonProps } from "../ui/button";
+import posthog from "posthog-js";
 
 const data = {
   title: "Pricing",
@@ -38,7 +41,7 @@ const data = {
         "2 private files in a repo",
         "20 annotations per file",
         "up to 3 teammates",
-        
+
       ],
       price: "$0",
       priceText: "per month",
@@ -50,13 +53,13 @@ const data = {
       badge: "Most popular",
       for: "Coming soon (for private and public repos)",
       features: [
-      "Unlimited anonymous editors",
-      "Unlimited history",
-      "Unlimited private files",
-      "Unlimited annotations per file",
-      "Realtime collaboration",
-      "Custom Colibri ACCs (coming soon)",
-      "MDX support (coming soon)",
+        "Unlimited anonymous editors",
+        "Unlimited history",
+        "Unlimited private files",
+        "Unlimited annotations per file",
+        "Realtime collaboration",
+        "Custom Colibri ACCs (coming soon)",
+        "MDX support (coming soon)",
       ],
       price: "$XX",
       priceText: "per month per seat",
@@ -67,6 +70,13 @@ const data = {
 };
 
 const Pricing = () => {
+  const handlePlanClick = (planName: string, price: string) => {
+    posthog.capture("pricing_plan_clicked", {
+      plan_name: planName.toLowerCase().replace(" ", "_"),
+      plan_price: price,
+    });
+  };
+
   return (
     <div className="w-full flex flex-col gap-4 mt-32">
       <h2 className="text-4xl font-semibold">{data.title}</h2>
@@ -87,7 +97,14 @@ const Pricing = () => {
               <h4 className="text-3xl font-semibold pt-[15px]">{plan.price}</h4>
               <p className="text-sm font-regular text-muted-foreground leading-[0.8rem] pb-1.5">{plan.priceText}</p>
             </div>
-            <Button variant={plan.cta_type as ButtonProps["variant"]} size="sm" className="w-full mt-4">{plan.cta}</Button>
+            <Button
+              variant={plan.cta_type as ButtonProps["variant"]}
+              size="sm"
+              className="w-full mt-4"
+              onClick={() => handlePlanClick(plan.name, plan.price)}
+            >
+              {plan.cta}
+            </Button>
           </div>
         ))}
       </div>
