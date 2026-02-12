@@ -1,0 +1,32 @@
+[
+  {
+    "event_name": "cta_clicked",
+    "description": "User clicks the main CTA link to launch/enter a GitHub markdown URL",
+    "file_path": "components/CTA.tsx"
+  },
+  {
+    "event_name": "navbar_get_started_clicked",
+    "description": "User clicks the Get Started button in the navbar",
+    "file_path": "components/Navbar.tsx"
+  },
+  {
+    "event_name": "navbar_section_clicked",
+    "description": "User clicks a navigation item (Features, Pricing, Contact) in the navbar",
+    "file_path": "components/Navbar.tsx"
+  },
+  {
+    "event_name": "pricing_plan_clicked",
+    "description": "User clicks a pricing plan CTA button (Open Source, Private, or Team)",
+    "file_path": "components/sections/Pricing.tsx"
+  },
+  {
+    "event_name": "footer_link_clicked",
+    "description": "User clicks a footer navigation link",
+    "file_path": "components/Footer.tsx"
+  },
+  {
+    "event_name": "footer_email_clicked",
+    "description": "User clicks the email contact link in the footer",
+    "file_path": "components/Footer.tsx"
+  }
+]
