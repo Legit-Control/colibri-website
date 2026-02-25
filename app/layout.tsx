@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Banner } from "@/components/cookiebanner";
 
 const aspekta = localFont({
   src: [
@@ -110,6 +111,8 @@ export default function RootLayout({
         className={`${aspekta.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <Banner />
+
       </body>
     </html>
   );
