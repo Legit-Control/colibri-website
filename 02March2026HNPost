@@ -1,0 +1,31 @@
+```Title:
+Show HN: Turn any GitHub Markdown into a collaborative editor by replacing “g” with "tune"
+
+Body:
+Hi everyone,
+
+I built Colibri a Google Docs-like experience for public GitHub Markdown files. To get there we built a tiny trick. 
+
+The trick is simple: just replace the g in a GitHub Markdown URL with tune, and it redirects straight to Colibri. 
+
+https://github.com/Legit-Control/get-colibri 
+-> 
+https://tuneithub.com/Legit-Control/get-colibri
+
+You can edit, annotate, and discuss in real time on your Markdown documents. 
+
+Why we built it
+
+We founded a completely different startup, but noticed again how painful it is to collaborate on Markdown. We kept switching back to Google Docs for async and live edits, which felt awkward because docs,rfc's and so on belong next to the code, not locked in Google Docs forever.
+
+Colibri lets you collaborate where the Markdown lives,  in real time, with suggestions and annotations.
+
+
+Limitations:
+- Works only for public GitHub repositories for now
+- Support for private repos coming soon
+
+Feedback, I’d love: 
+
+- How do you currently collaborate on .md files?
+- If you could add one feature to a Markdown editor like this, what would it be?```
